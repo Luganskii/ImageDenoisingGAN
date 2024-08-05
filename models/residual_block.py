@@ -3,6 +3,10 @@ from torch import Tensor, nn
 
 
 class _ResidualConvBlock(nn.Module):
+    """
+    Basic module for generator
+    """
+
     def __init__(self, channels: int, kernel_size, stride, padding, bias) -> None:
         super().__init__()
         self.redisual_block = nn.Sequential(
