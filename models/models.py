@@ -1,9 +1,47 @@
+import torch
 from basic_block import _Basic_block
+from residual_block import _ResidualConvBlock
 from torch import Tensor, nn
 
 
 class Generator(nn.Module):
-    pass
+
+    """
+
+    """
+
+    def __init__(self, channels: int, kernel_size: int, stride: int, padding: int, bias: bool, B: int = 16):
+
+        self.input_block = nn.Sequential(
+            nn.Conv2d(3, channels, kernel_size * 3, stride, padding, bias),
+            nn.PReLU(),
+        )
+
+        self.base_block = self._make_layer(channels, kernel_size, stride, padding, bias, B)
+
+        self.skip_connection_block = nn.Sequential(
+            nn.Conv2d(channels, channels, kernel_size, stride, padding, bias),
+            nn.BatchNorm2d(channels)
+        )
+
+        self.output_conv = nn.Conv2d(channels, 3, kernel_size * 3, stride, padding, bias)
+
+    def forward(self, x):
+        identity = x
+        x = self.input_block(x)
+        x = self.base_block(x)
+        x = self.skip_connection_block(x)
+        x = torch.add(x, identity)
+
+        return self.output_conv(x)
+
+    def _make_layer(self, channels: int, kernel_size: int, stride: int, padding: int, bias: bool, B: int):
+        layers = []
+
+        for _ in range(B):
+            layers.append(_ResidualConvBlock(channels, kernel_size, stride, padding, bias))
+
+        return nn.Sequential(layers)
 
 
 class Discriminator(nn.Module):
